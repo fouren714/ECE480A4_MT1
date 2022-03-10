@@ -1,4 +1,4 @@
-def bool_to_cnf(func, addition):
+def bool_to_cnf(func,file):
     l = func.split("+")
     sum = []
     out = []
@@ -54,22 +54,24 @@ def bool_to_cnf(func, addition):
         sum = temp
         line_count += 1
     #Write the initial CNF to the outputfile
-    outFile = open("cnf.cnf", "w")
+    outFile = open(file, "w")
     for x in out:
         outFile.write(x)
     outFile.close()
     #Count the number of clauses
-    file1 = open('cnf.cnf', 'r')
+    file1 = open(file, 'r')
     lines = file1.readlines()
     file1.close()
     clauses = len(lines)
     #Write the header to the file
-    outFile = open("cnf.cnf", "w")
+    outFile = open(file, "w")
     outFile.write("p cnf "+str(clauses)+" "+str(line_count-1)+"\n")
     for x in range(len(lines)):
         outFile.write(lines[x][:len(lines[x])-1]+" 0\n")
-    for x in addition:
-        outFile.write(x)
+# =============================================================================
+#     for x in addition:
+#         outFile.write(x)
+# =============================================================================
     outFile.close()
     return var
 
@@ -194,8 +196,56 @@ def var_list(string):
     
     return p_groups
 
+# input: SoP string
+# checks for redundant and impossible clauses x.x or x.~x and removes them
+# returns clean string
+def checker(string):
+    new_lst = []
+    # split string at +
+    parts = string.split('+')
+    print('Oriignal String: {}'.format(string))
+    # iterate through each clause, disect, correct, reconstruct
+    for item in parts:
+        #split at .
+        var_lst = item.split('.')
+        
+        # go through variables
+        for var in var_lst:
+            # set compare var
+            comp_var = var
+            # take compare var out of var_lst
+            var_lst.remove(comp_var)
+            put_back = True
+            
+            #check for inverts
+            if comp_var[0] == '~':
+                try:
+                    while comp_var[1:] in var_lst:
+                        var_lst.remove(comp_var[1:])
+                        put_back = False
+                except:
+                    pass
+                
+            elif comp_var[0] == 'x':
+                target = '~{}'.format(comp_var)
+                try:
+                    while target in var_lst:
+                        var_lst.remove(target)
+                        put_back = False
+                except:
+                    pass
+            
+            if put_back:
+                var_lst.append(comp_var)
+        
+        new_lst.append(var_lst)
+        
+       
+       
+            
+    return new_lst
+
 # xor creates the POS version of the input by inverting and xor'ing
- 
 def xor(func1, func2):
 
     # split functions into seaprate arguments
@@ -216,17 +266,17 @@ def xor(func1, func2):
     
     xor1 = expand(in1)
     xor2 = expand(in2)
+    
+    xor1 = checker(xor1)
    
-    return '{}+{}'.format(xor1,xor2)
+    return xor1#'{}+{}'.format(xor1,xor2)
     
 # TODO change bool_to_cf to allow for different files to be written
 # TODO implement bool_to_cf in xor for result 
-# =============================================================================
-# test1 = 'a.b+c.d'
-# test2 = 'a.c+b.c'
-# 
-# a = xor(test1,test2)
-# print(a)
-# 
-# bool_to_cnf('x1.x2+x1.x3')
-# =============================================================================
+test1 = 'x1.x2+x3'
+test2 = 'x1.x3+x2'
+
+a = xor(test1,test2)
+print(a)
+
+#bool_to_cnf(a, 'xor_test')
